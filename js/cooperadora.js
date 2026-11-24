@@ -842,53 +842,42 @@ const CooperadoraModulo = {
     const tabla = tipo => this.comision.filter(c => c.tipo === tipo && c.ejercicio_id === ejercicioId);
     const dir = tabla('directiva');
     const fila = (i, c) => `
-      <div style="display:grid; grid-template-columns:1.1fr 1.8fr 1.2fr 1.5fr 1fr 0.8fr; gap:0.3rem; margin-bottom:0.3rem;">
-        <input id="d-cargo${i}" class="swal2-input" style="margin:0;" placeholder="Cargo" value="${this.esc(c?.cargo || '')}">
-        <input id="d-nombre${i}" class="swal2-input" style="margin:0;" placeholder="Apellido y nombre" value="${this.esc(c?.apellido_nombre || '')}">
-        <input id="d-cuil${i}" class="swal2-input" style="margin:0;" placeholder="CUIL XX-XXXXXXXX-X" value="${this.esc(c?.documento || '')}">
-        <input id="d-dom${i}" class="swal2-input" style="margin:0;" placeholder="Domicilio" value="${this.esc(c?.domicilio || '')}">
-        <input id="d-loc${i}" class="swal2-input" style="margin:0;" placeholder="Localidad" value="${this.esc(c?.localidad || '')}">
-        <input id="d-venc${i}" class="swal2-input" style="margin:0;" placeholder="Vencimiento" value="${this.esc(c?.vencimiento || '')}">
+      <div class="coop-fila coop-fila-dir">
+        <input id="d-cargo${i}" class="swal2-input" placeholder="Cargo" value="${this.esc(c?.cargo || '')}">
+        <input id="d-nombre${i}" class="swal2-input" placeholder="Apellido y nombre" value="${this.esc(c?.apellido_nombre || '')}">
+        <input id="d-cuil${i}" class="swal2-input" placeholder="CUIL XX-XXXXXXXX-X" value="${this.esc(c?.documento || '')}">
+        <input id="d-dom${i}" class="swal2-input" placeholder="Domicilio" value="${this.esc(c?.domicilio || '')}">
+        <input id="d-loc${i}" class="swal2-input" placeholder="Localidad" value="${this.esc(c?.localidad || '')}">
+        <input id="d-venc${i}" class="swal2-input" placeholder="Vencimiento" value="${this.esc(c?.vencimiento || '')}">
       </div>`;
+    // Comisión Revisora: una fila por cargo, con su etiqueta a la izquierda (el orden de los ids r-*0..3 lo usa preConfirm).
+    const filaRev = (i, cargo) => {
+      const c = tabla('revisora').find(x => x.cargo === cargo);
+      return `
+      <div class="coop-fila coop-fila-rev"><b>${cargo}</b>
+        <input id="r-nombre${i}" class="swal2-input" placeholder="Apellido y nombre" value="${this.esc(c?.apellido_nombre || '')}">
+        <input id="r-dni${i}" class="swal2-input" placeholder="DNI" value="${this.esc(c?.documento || '')}">
+        <input id="r-dom${i}" class="swal2-input" placeholder="Domicilio" value="${this.esc(c?.domicilio || '')}">
+        <input id="r-loc${i}" class="swal2-input" placeholder="Localidad" value="${this.esc(c?.localidad || '')}">
+      </div>`;
+    };
+    const filaFed = (i, cargo) => {
+      const c = tabla('federacion').find(x => x.cargo === cargo);
+      return `
+      <div class="coop-fila coop-fila-fed"><b>${cargo}</b>
+        <input id="f-nombre${i}" class="swal2-input" placeholder="Apellido y nombre" value="${this.esc(c?.apellido_nombre || '')}">
+        <input id="f-dni${i}" class="swal2-input" placeholder="DNI" value="${this.esc(c?.documento || '')}">
+      </div>`;
+    };
     const { value } = await Swal.fire({
       title: 'Comisión Directiva, Revisora y Representante (Cuadros 4, 5 y 6)', width: 1100,
       html: `
         <strong>Comisión Directiva (hasta 14 cargos)</strong>
         ${Array.from({ length: 14 }).map((_, i) => fila(i, dir[i])).join('')}
         <hr><strong>Comisión Revisora de Cuentas</strong>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr 1.5fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Titular Docente</b>
-          <input id="r-nombre0" class="swal2-input" style="margin:0;" placeholder="Apellido y nombre" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular Docente')?.apellido_nombre || '')}">
-          <input id="r-dni0" class="swal2-input" style="margin:0;" placeholder="DNI" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular Docente')?.documento || '')}">
-          <input id="r-dom0" class="swal2-input" style="margin:0;" placeholder="Domicilio" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular Docente')?.domicilio || '')}">
-          <input id="r-loc0" class="swal2-input" style="margin:0;" placeholder="Localidad" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular Docente')?.localidad || '')}">
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr 1.5fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Titular</b>
-          <input id="r-nombre1" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular')?.apellido_nombre || '')}">
-          <input id="r-dni1" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular')?.documento || '')}">
-          <input id="r-dom1" class="swal2-input" style="margin:0;" placeholder="Domicilio" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular')?.domicilio || '')}">
-          <input id="r-loc1" class="swal2-input" style="margin:0;" placeholder="Localidad" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Titular')?.localidad || '')}">
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr 1.5fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Suplente</b>
-          <input id="r-nombre2" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Suplente')?.apellido_nombre || '')}">
-          <input id="r-dni2" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Suplente')?.documento || '')}">
-          <input id="r-dom2" class="swal2-input" style="margin:0;" placeholder="Domicilio" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Suplente')?.domicilio || '')}">
-          <input id="r-loc2" class="swal2-input" style="margin:0;" placeholder="Localidad" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Suplente')?.localidad || '')}">
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr 1.5fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Asesor/a</b>
-          <input id="r-nombre3" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Asesor/a')?.apellido_nombre || '')}">
-          <input id="r-dni3" class="swal2-input" style="margin:0;" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Asesor/a')?.documento || '')}">
-          <input id="r-dom3" class="swal2-input" style="margin:0;" placeholder="Domicilio" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Asesor/a')?.domicilio || '')}">
-          <input id="r-loc3" class="swal2-input" style="margin:0;" placeholder="Localidad" value="${this.esc(tabla('revisora').find(c => c.cargo === 'Asesor/a')?.localidad || '')}">
-        </div>
+        ${['Titular Docente', 'Titular', 'Suplente', 'Asesor/a'].map((cargo, i) => filaRev(i, cargo)).join('')}
         <hr><strong>Representante ante la Federación</strong>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Titular</b>
-          <input id="f-nombre0" class="swal2-input" style="margin:0;" value="${this.esc(tabla('federacion').find(c => c.cargo === 'Titular')?.apellido_nombre || '')}">
-          <input id="f-dni0" class="swal2-input" style="margin:0;" value="${this.esc(tabla('federacion').find(c => c.cargo === 'Titular')?.documento || '')}">
-        </div>
-        <div style="display:grid; grid-template-columns:1fr 2fr 1fr; gap:0.3rem; margin-bottom:0.3rem;"><b>Suplente</b>
-          <input id="f-nombre1" class="swal2-input" style="margin:0;" value="${this.esc(tabla('federacion').find(c => c.cargo === 'Suplente')?.apellido_nombre || '')}">
-          <input id="f-dni1" class="swal2-input" style="margin:0;" value="${this.esc(tabla('federacion').find(c => c.cargo === 'Suplente')?.documento || '')}">
-        </div>
+        ${['Titular', 'Suplente'].map((cargo, i) => filaFed(i, cargo)).join('')}
       `,
       focusConfirm: false, showCancelButton: true, confirmButtonText: 'Guardar',
       preConfirm: () => {

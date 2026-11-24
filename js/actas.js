@@ -448,10 +448,11 @@ const ActasModulo = {
       pageSetup: { paperSize: 5, orientation: 'landscape', fitToPage: false,   // 5 = oficio (legal)
         margins: { left: 0.3, right: 0.3, top: 0.35, bottom: 0.35, header: 0.1, footer: 0.1 }, horizontalCentered: true }
     });
-    ws.getColumn(1).width = 7;   // N.º egresado
+    ws.getColumn(1).width = 8.5; // N.º egresado ("Egresado" no entraba justo)
     ws.getColumn(2).width = 4;   // N.º de orden
     ws.getColumn(3).width = 32;  // Apellido y nombres
-    for (let i = 0; i < nM; i++) { ws.getColumn(COL_MOD + i * 2).width = 5; ws.getColumn(COL_MOD + i * 2 + 1).width = 14; }
+    // NUMERO (nota en letras): 15 para que "SESENTA Y CINCO" / "NOVENTA Y CINCO" entren sin tocar el borde
+    for (let i = 0; i < nM; i++) { ws.getColumn(COL_MOD + i * 2).width = 5; ws.getColumn(COL_MOD + i * 2 + 1).width = 15; }
     ws.getColumn(COL_DOC).width = 5;
     ws.getColumn(ULT).width = 10;
 
@@ -539,11 +540,23 @@ const ActasModulo = {
       cab(COL_DOC, ULT, 'DOCUMENTO');
       ws.getCell(h2, COL_DOC).value = 'TIPO';
       ws.getCell(h2, ULT).value = 'N°';
+      // Bordes del encabezado: en las celdas combinadas solo va el contorno. Si se les pone caja a todas,
+      // la vista previa PDF dibuja las líneas internas y "tacha" APELLIDO Y NOMBRES, N° y DOCUMENTO.
+      const bordeCab = (hr, c) => {
+        const b = { top: fino, left: fino, bottom: fino, right: fino };
+        if (c <= 3) { if (hr === h1) delete b.bottom; else delete b.top; }               // N° egresado / N° / Apellido: combinadas h1+h2
+        if (hr === h1 && c === COL_DOC) delete b.right;                                  // DOCUMENTO: combinada TIPO+N°
+        if (hr === h1 && c === ULT) delete b.left;
+        if (hr === h2 && c >= COL_MOD && c < COL_DOC && Math.floor((c - COL_MOD) / 2) < usados) {
+          if ((c - COL_MOD) % 2 === 0) delete b.right; else delete b.left;               // nombre del módulo: combinada ACTA+NUMERO
+        }
+        return b;
+      };
       for (const hr of [h1, h2]) {
         for (let c = 1; c <= ULT; c++) {
           if (enCruce(hr, c)) continue;
           const cell = ws.getCell(hr, c);
-          cell.border = caja;
+          cell.border = bordeCab(hr, c);
           cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
           if (!cell.font || !cell.font.italic) cell.font = { bold: true, size: 8 };
         }
@@ -631,6 +644,9 @@ const ActasModulo = {
       }
 
       r = finFirmas + 1;
+      // Las dos leyendas del pie se combinan a todo el ancho: en una celda angosta la vista previa las cortaba ("Se consi…")
+      ws.mergeCells(r, 1, r, ULT);
+      ws.mergeCells(r + 1, 1, r + 1, ULT);
       ws.getCell(r, 1).value = 'Se considerará aprobado con un mínimo de 70 puntos. EQ: módulo acreditado por equivalencia. NO HABILITADO: no aprobó el módulo anterior (correlatividad).';
       ws.getCell(r, 1).font = { size: 9 };
       r++;

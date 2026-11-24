@@ -1461,3 +1461,17 @@ details.seg-grupo > .seg-item { margin: .5rem .7rem; }
 /* Pie de página (fondo oscuro): el dorado del tema es marrón para fondos claros, acá hace falta el claro */
 .main-footer .btn-email { color: #fde68a !important; border-color: rgba(253, 230, 138, .45) !important; }
 .main-footer .btn-email:hover { color: #0f172a !important; }
+
+/* ===== Cooperadora: formularios en grilla dentro de SweetAlert (comisiones, Cuadros 4/5/6) =====
+   Las etiquetas llevan ancho fijo y los inputs minmax(0,…): SweetAlert aplica word-break:break-word,
+   que sin esto achicaba la columna de la etiqueta a una letra. */
+.coop-fila { display: grid; gap: .3rem; margin-bottom: .3rem; align-items: center; text-align: left; }
+.coop-fila > b { word-break: normal; overflow-wrap: normal; hyphens: none; font-size: .9rem; }
+.coop-fila .swal2-input { margin: 0; width: 100%; min-width: 0; box-sizing: border-box; }
+.coop-fila-dir { grid-template-columns: minmax(0,1.1fr) minmax(0,1.8fr) minmax(0,1.2fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,.8fr); }
+.coop-fila-rev { grid-template-columns: 8.5rem minmax(0,2fr) minmax(0,1fr) minmax(0,1.5fr) minmax(0,1fr); }
+.coop-fila-fed { grid-template-columns: 8.5rem minmax(0,2fr) minmax(0,1fr); }
+@media (max-width: 760px) {
+  .coop-fila-dir, .coop-fila-rev, .coop-fila-fed { grid-template-columns: 1fr 1fr; }
+  .coop-fila > b { grid-column: 1 / -1; }
+}
