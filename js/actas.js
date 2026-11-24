@@ -540,23 +540,11 @@ const ActasModulo = {
       cab(COL_DOC, ULT, 'DOCUMENTO');
       ws.getCell(h2, COL_DOC).value = 'TIPO';
       ws.getCell(h2, ULT).value = 'N°';
-      // Bordes del encabezado: en las celdas combinadas solo va el contorno. Si se les pone caja a todas,
-      // la vista previa PDF dibuja las líneas internas y "tacha" APELLIDO Y NOMBRES, N° y DOCUMENTO.
-      const bordeCab = (hr, c) => {
-        const b = { top: fino, left: fino, bottom: fino, right: fino };
-        if (c <= 3) { if (hr === h1) delete b.bottom; else delete b.top; }               // N° egresado / N° / Apellido: combinadas h1+h2
-        if (hr === h1 && c === COL_DOC) delete b.right;                                  // DOCUMENTO: combinada TIPO+N°
-        if (hr === h1 && c === ULT) delete b.left;
-        if (hr === h2 && c >= COL_MOD && c < COL_DOC && Math.floor((c - COL_MOD) / 2) < usados) {
-          if ((c - COL_MOD) % 2 === 0) delete b.right; else delete b.left;               // nombre del módulo: combinada ACTA+NUMERO
-        }
-        return b;
-      };
       for (const hr of [h1, h2]) {
         for (let c = 1; c <= ULT; c++) {
           if (enCruce(hr, c)) continue;
           const cell = ws.getCell(hr, c);
-          cell.border = bordeCab(hr, c);
+          cell.border = caja;
           cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
           if (!cell.font || !cell.font.italic) cell.font = { bold: true, size: 8 };
         }

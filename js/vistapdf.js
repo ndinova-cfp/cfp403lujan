@@ -114,11 +114,14 @@ const VistaPDF = {
     if (!anchoTotal) return;
 
     // Combinaciones
-    const mast = {}, cubierta = new Set();
+    const mast = {}, cubierta = new Set(), rangoDe = {};
     ((ws.model && ws.model.merges) || []).forEach(m => {
       const g = this._rango(m); if (!g) return;
       mast[g.r1 + ',' + g.c1] = g;
-      for (let r = g.r1; r <= g.r2; r++) for (let c = g.c1; c <= g.c2; c++) if (r !== g.r1 || c !== g.c1) cubierta.add(r + ',' + c);
+      for (let r = g.r1; r <= g.r2; r++) for (let c = g.c1; c <= g.c2; c++) {
+        rangoDe[r + ',' + c] = g;
+        if (r !== g.r1 || c !== g.c1) cubierta.add(r + ',' + c);
+      }
     });
     const anchoRect = (ra, ca, rb, cb) => { let w = 0; for (let c = ca; c <= cb; c++) w += (colW[c] || 0); return w; };
 
@@ -238,15 +241,38 @@ const VistaPDF = {
         const gr = { hair: 0.25, thin: 0.5, dotted: 0.5, dashed: 0.5, medium: 1.1, mediumDashed: 1.1, double: 1, thick: 1.6 }[b.style] || 0.5;
         page.drawLine({ start: { x: x1, y: y1 }, end: { x: x2, y: y2 }, thickness: gr * Math.max(esc, 0.7), color: this._rgb(PDFLib, b.color && b.color.argb, PDFLib.rgb(0, 0, 0)) });
       };
+      // En una celda combinada solo existe el contorno (como en Excel): ExcelJS comparte el mismo estilo entre
+      // todas las celdas del rango, así que dibujar el borde de cada una trazaba líneas internas que "tachaban"
+      // los títulos combinados. Cada lado exterior toma el borde de su celda o, si no tiene, el de la maestra.
+      const bordeEf = (r, c) => {
+        const bd = ws.getRow(r).getCell(c).border || {};
+        const g = rangoDe[r + ',' + c];
+        if (!g) return bd;
+        const mb = ws.getRow(g.r1).getCell(g.c1).border || {};
+        return {
+          top: r === g.r1 ? (bd.top || mb.top) : null, bottom: r === g.r2 ? (bd.bottom || mb.bottom) : null,
+          left: c === g.c1 ? (bd.left || mb.left) : null, right: c === g.c2 ? (bd.right || mb.right) : null
+        };
+      };
       pag.filas.forEach(r => {
         if (!alto[r]) return;
         const row = ws.getRow(r);
         for (let c = c1; c <= c2; c++) {
           if (!colW[c]) continue;
-          const bd = row.getCell(c).border; if (!bd) continue;
+          const bd = bordeEf(r, c);
           const xa = x0 + colX[c], xb = x0 + colX[c + 1], ya = Y(yTop[r]), yb = ya - alto[r] * esc;
           trazo(bd.top, xa, ya, xb, ya); trazo(bd.bottom, xa, yb, xb, yb);
           trazo(bd.left, xa, ya, xa, yb); trazo(bd.right, xb, ya, xb, yb);
+          // Diagonal (p. ej. el bloque cruzado de módulos sin usar en el acta): una sola vez, sobre todo el rango
+          const g = rangoDe[r + ',' + c];
+          if (g && (r !== g.r1 || c !== g.c1)) continue;
+          const dg = (row.getCell(c).border || {}).diagonal; if (!dg || !dg.style || (!dg.up && !dg.down)) continue;
+          const r2g = g ? g.r2 : r, c2g = g ? g.c2 : c;
+          if (!pag.filas.includes(r2g)) continue;
+          let hDiag = 0; for (let k = r; k <= r2g; k++) hDiag += (alto[k] || 0) * esc;
+          const xd2 = x0 + colX[c2g + 1], yd2 = ya - hDiag;
+          if (dg.up) trazo(dg, xa, yd2, xd2, ya);
+          if (dg.down) trazo(dg, xa, ya, xd2, yd2);
         }
       });
 
@@ -291,8 +317,10 @@ const VistaPDF = {
 
           const aw = cw - 2 * pad;
           if (al.shrinkToFit) {
+            // Se achica hasta que entre con un poco de aire a cada lado (antes quedaba pegado al borde)
+            const awS = Math.max(4, aw - 2 * pad);
             const wMax = Math.max(...txt.split('\n').map(l => font.widthOfTextAtSize(l, size)));
-            if (wMax > aw) size = Math.max(3, size * aw / wMax);
+            if (wMax > awS) size = Math.max(3, size * awS / wMax);
           }
           let lineas = al.wrapText ? envolver(txt, font, size, Math.max(aw, 4)) : txt.split('\n').slice(0, 1);
           const hLinea = size * 1.18;
