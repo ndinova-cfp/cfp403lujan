@@ -103,8 +103,13 @@ const FichaCurso = {
         combinar(r + 2, 2, r + 2, 4); celda(r + 2, 2, 'DIRECCIÓN DE FORMACIÓN PROFESIONAL', { h: 'center', size: 9 });
         // E-G: logos
         combinar(r, 5, r + 2, 7);
-        if (idCfp !== null) ws.addImage(idCfp, { tl: { col: 4.15, row: r - 1 + 0.08 }, ext: { width: 46, height: 46 } });
-        if (idDg !== null) ws.addImage(idDg, { tl: { col: 5.25, row: r - 1 + 0.35 }, ext: { width: 120, height: 39 } });
+        // Los logos se anclan con columna entera + desplazamiento en EMU (1 px = 9525). No usar columnas fraccionarias
+        // (col: 4.15): ExcelJS calcula ese desplazamiento con un ancho de columna por defecto, y después lo recorta
+        // al ancho real de la columna angosta, con lo que el logo cae una columna más a la derecha y pisa al instructor.
+        // La celda E-G mide ~226 px: CFP (46 px) y DGCyE (120 px) quedan centrados juntos, con 14 px de separación.
+        const emu = px => Math.round(px * 9525);
+        if (idCfp !== null) ws.addImage(idCfp, { tl: { nativeCol: 4, nativeColOff: emu(23), nativeRow: r - 1, nativeRowOff: emu(7) }, ext: { width: 46, height: 46 } });
+        if (idDg !== null) ws.addImage(idDg, { tl: { nativeCol: 5, nativeColOff: emu(35), nativeRow: r - 1, nativeRowOff: emu(10) }, ext: { width: 120, height: 39 } });
         // H: Instructor
         celda(r, 8, 'Instructor:', { h: 'center', size: 10 });
         combinar(r + 1, 8, r + 2, 8); celda(r + 1, 8, docenteTxt, { h: 'center', wrap: true, bold: true, size: 9 });

@@ -357,12 +357,17 @@ const VistaPDF = {
           const bytes = med.buffer ? new Uint8Array(med.buffer) : this._b64ABytes(med.base64);
           const key = im.id;
           const pr = K.imagenes[key] || (K.imagenes[key] = (String(med.extension).toLowerCase() === 'png' ? pdf.embedPng(bytes) : pdf.embedJpg(bytes)));
-          const colF = Number(tl.col !== undefined ? tl.col : tl.nativeCol) + 1;
-          const cI = Math.floor(colF), fr = colF - cI;
-          const colBase = colX[cI] !== undefined ? colX[cI] + (colW[cI] || 0) * esc * fr : 0;
-          const rowF = Number(tl.row !== undefined ? tl.row : tl.nativeRow) + 1;
-          const rI = Math.floor(rowF), fy = rowF - rI;
-          const yy = (yTop[rI] || 0) + (alto[rI] || 0) * esc * fy;
+          // Posición como la guarda Excel: celda de anclaje (nativeCol/nativeRow) + desplazamiento en EMU (1 px = 9525).
+          // No se usa tl.col/tl.row: ExcelJS los deriva dividiendo por un ancho/alto de celda aproximado y recorta el
+          // desplazamiento al ancho de la columna, con lo que un logo en una columna angosta se corría de columna.
+          let cI, offX, rI, offY;
+          if (tl.nativeCol !== undefined && tl.nativeColOff !== undefined) { cI = Number(tl.nativeCol) + 1; offX = Number(tl.nativeColOff) / 9525 * 0.75 * esc; }
+          else { const colF = Number(tl.col) + 1; cI = Math.floor(colF); offX = (colW[cI] || 0) * esc * (colF - cI); }
+          if (tl.nativeRow !== undefined && tl.nativeRowOff !== undefined) { rI = Number(tl.nativeRow) + 1; offY = Number(tl.nativeRowOff) / 9525 * 0.75 * esc; }
+          else { const rowF = Number(tl.row) + 1; rI = Math.floor(rowF); offY = (alto[rI] || 0) * esc * (rowF - rI); }
+          if (!pag.filas.includes(rI)) return;
+          const colBase = colX[cI] !== undefined ? colX[cI] + offX : 0;
+          const yy = (yTop[rI] || 0) + offY;
           const w = (im.rg.ext ? im.rg.ext.width : 40) * 0.75 * esc, hh = (im.rg.ext ? im.rg.ext.height : 40) * 0.75 * esc;
           K._pend.push(Promise.resolve(pr).then(emb => page.drawImage(emb, { x: x0 + colBase, y: Y(yy) - hh, width: w, height: hh })));
         } catch (e) { /* un logo que falla no debe frenar el PDF */ }
